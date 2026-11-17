@@ -40,8 +40,9 @@
   .cartao h2{font-weight:700;font-size:24px;color:var(--navy)}
   .ajuda{color:var(--cinza);font-size:15px;margin:2px 0 14px}
   label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px;color:var(--navy)}
-  input{width:100%;font:inherit;font-size:16px;padding:13px 14px;border:1.5px solid var(--linha);border-radius:12px;background:#f8fafd;transition:border-color .15s, box-shadow .15s}
-  input:focus{outline:none;border-color:var(--verde);box-shadow:0 0 0 4px rgba(29,154,75,.14);background:#fff}
+  input,textarea{width:100%;font:inherit;font-size:16px;padding:13px 14px;border:1.5px solid var(--linha);border-radius:12px;background:#f8fafd;transition:border-color .15s, box-shadow .15s}
+  input:focus,textarea:focus{outline:none;border-color:var(--verde);box-shadow:0 0 0 4px rgba(29,154,75,.14);background:#fff}
+  .lgpd{font-size:13px;color:var(--cinza);margin-top:12px;line-height:1.5}
   .erro{color:#b42318;font-size:14px;margin-top:10px;min-height:20px}
   .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font:inherit;font-size:17px;font-weight:700;color:#fff;
     background:linear-gradient(90deg,var(--verde-esc),var(--verde));border:0;border-radius:14px;padding:16px 20px;cursor:pointer;text-decoration:none;
@@ -105,6 +106,11 @@
         <input id="inst" name="instituicao" autocomplete="organization" required>
         <label for="cidade">Cidade / Estado</label>
         <input id="cidade" name="cidade" placeholder="Ex.: Florianópolis / SC" required>
+        <label for="email">Contato (e-mail)</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
+        <label for="motivo">Quero acessar este curso porque…</label>
+        <textarea id="motivo" name="motivo" rows="3" style="resize:vertical" required></textarea>
+        <p class="lgpd">🔒 Seus dados serão usados apenas para acompanhar o uso do curso e enviar informações sobre ele. Não serão compartilhados com terceiros.</p>
         <p class="erro" id="erro" role="alert"></p>
         <button class="btn" type="submit" id="enviar">Liberar meu acesso</button>
       </form>
@@ -136,10 +142,10 @@
 <script>
   // ================= CONFIGURAÇÃO =================
   // 1) Link direto do curso no Moodle:
-  const MOODLE_URL = "https://moodle.ifsc.edu.br/course/view.php?id=1428";
+  const MOODLE_URL = "https://moodle.ifsc.edu.br/mod/lesson/view.php?id=74011&pageid=368&startlastseen=no";
   // 2) Google Forms que guarda as respostas (preencher com os dados do formulário):
   const GOOGLE_FORM_ACTION = "https://docs.google.com/forms/d/e/1FAIpQLSc2WEr7tSjjo1HsL6TjsCHULk8GIxp5UCf1IpliWSYDvNVnQw/formResponse"; // ex.: https://docs.google.com/forms/d/e/XXXXXXXX/formResponse
-  const CAMPOS = { nome: "entry.1541579903", instituicao: "entry.757769343", cidade: "entry.1651156881" };
+  const CAMPOS = { nome: "entry.1541579903", instituicao: "entry.757769343", cidade: "entry.1651156881", email: "entry.876518203", motivo: "entry.63633640" };
   // ================================================
 
   const form = document.getElementById("form");
@@ -150,11 +156,13 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const nome = form.nome.value.trim(), inst = form.instituicao.value.trim(), cid = form.cidade.value.trim();
-    if (!nome || !inst || !cid) { erro.textContent = "Por favor, preencha todos os campos."; return; }
+    const email = form.email.value.trim(), motivo = form.motivo.value.trim();
+    if (!nome || !inst || !cid || !email || !motivo) { erro.textContent = "Por favor, preencha todos os campos."; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { erro.textContent = "Confira o e-mail informado."; return; }
     erro.textContent = ""; btn.disabled = true; btn.textContent = "Enviando…";
     if (GOOGLE_FORM_ACTION) {
       const dados = new URLSearchParams();
-      dados.append(CAMPOS.nome, nome); dados.append(CAMPOS.instituicao, inst); dados.append(CAMPOS.cidade, cid);
+      dados.append(CAMPOS.nome, nome); dados.append(CAMPOS.instituicao, inst); dados.append(CAMPOS.cidade, cid); dados.append(CAMPOS.email, email); dados.append(CAMPOS.motivo, motivo);
       try { await fetch(GOOGLE_FORM_ACTION, { method: "POST", mode: "no-cors", body: dados }); } catch (_) {}
     }
     document.getElementById("obrigado").textContent = "Obrigado, " + nome.split(" ")[0] + "! Seu cadastro foi registrado.";
